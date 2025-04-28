@@ -41,7 +41,7 @@ The library continuously monitors changes in the app's state (e.g., the user mig
 ## Installation
 
 ```sh
-npm install react-native-fingerprint-auth
+npm install react-native-fingerprint-auth-lib
 ```
 
 ## Usage
@@ -53,7 +53,7 @@ import {
   authenticateFingerprint,
   isFingerprintAvailable,
   authenticateDeviceCredentials,
-} from 'react-native-fingerprint-auth';
+} from 'react-native-fingerprint-auth-lib';
 
 export default function App() {
   const [isAvailable, setIsAvailable] = (useState < boolean) | (null > null);

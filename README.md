@@ -10,7 +10,6 @@ npm install react-native-fingerprint-auth
 
 ## Usage
 
-
 ```js
 import { multiply } from 'react-native-fingerprint-auth';
 
@@ -18,7 +17,6 @@ import { multiply } from 'react-native-fingerprint-auth';
 
 const result = multiply(3, 7);
 ```
-
 
 ## Contributing
 

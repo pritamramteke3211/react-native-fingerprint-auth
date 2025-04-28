@@ -111,6 +111,9 @@ dependencies {
   //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+  // ✅ Add Biometric library here
+  implementation "androidx.biometric:biometric:1.2.0-alpha04" // or use latest stable: 1.1.0
 }
 
 if (isNewArchitectureEnabled()) {

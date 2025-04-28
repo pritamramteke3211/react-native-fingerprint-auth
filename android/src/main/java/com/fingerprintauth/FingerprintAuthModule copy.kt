@@ -1,22 +1,19 @@
 package com.fingerprintauth
 
+import android.os.Bundle
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.fragment.app.FragmentActivity
 import com.facebook.react.bridge.*
-import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import java.util.concurrent.Executors
 
-@ReactModule(name = FingerprintAuthModule.NAME)
-class FingerprintAuthModule(private val context: ReactApplicationContext) :
-    NativeFingerprintAuthSpec(context) {
+class FingerprintAuthModuleCpy(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
-    private val reactContext = context
+    override fun getName() = "FingerprintAuthModuleCpy"
 
-    override fun getName(): String = NAME
-
-    override fun isFingerprintAvailable(promise: Promise) {
+    @ReactMethod
+    fun isFingerprintAvailable(promise: Promise) {
         val biometricManager = BiometricManager.from(reactContext)
         when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
             BiometricManager.BIOMETRIC_SUCCESS -> promise.resolve(true)
@@ -25,7 +22,8 @@ class FingerprintAuthModule(private val context: ReactApplicationContext) :
         }
     }
 
-    override fun authenticateFingerprint(reason: String, promise: Promise) {
+    @ReactMethod
+    fun authenticateFingerprint(reason: String, promise: Promise) {
         val activity = currentActivity ?: run {
             promise.reject("NO_ACTIVITY", "No current activity found")
             return
@@ -36,16 +34,17 @@ class FingerprintAuthModule(private val context: ReactApplicationContext) :
                 val executor = Executors.newSingleThreadExecutor()
 
                 val biometricPrompt = BiometricPrompt(
-                    activity,
+                    activity as FragmentActivity,  // Explicit cast here
                     executor,
                     object : BiometricPrompt.AuthenticationCallback() {
                         override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                            if (errorCode == BiometricPrompt.ERROR_CANCELED ||
-                                errorCode == BiometricPrompt.ERROR_USER_CANCELED) {
-                                promise.reject("USER_CANCELLED", "Authentication was cancelled by user")
-                            } else {
-                                promise.reject("AUTH_ERROR", "Error: $errString ($errorCode)")
-                            }
+                            
+                        if (errorCode == BiometricPrompt.ERROR_CANCELED || 
+                            errorCode == BiometricPrompt.ERROR_USER_CANCELED) {
+                            promise.reject("USER_CANCELLED", "Authentication was cancelled by user")
+                        } else {
+                            promise.reject("AUTH_ERROR", "Error: $errString ($errorCode)")
+                        }
                         }
 
                         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
@@ -78,12 +77,14 @@ class FingerprintAuthModule(private val context: ReactApplicationContext) :
             .emit(eventName, message)
     }
 
-    // Required for NativeEventEmitter compatibility
-    override fun addListener(eventName: String) {}
+        // Add this method to support NativeEventEmitter
+    @ReactMethod
+    fun addListener(eventName: String) {
+        // Required for RN 0.65+
+    }
 
-    override fun removeListeners(count: Double) {}
-
-    companion object {
-        const val NAME = "FingerprintAuth"
+    @ReactMethod
+    fun removeListeners(count: Int) {
+        // Required for RN 0.65+
     }
 }

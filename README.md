@@ -240,6 +240,56 @@ const styles = StyleSheet.create({
 });
 ```
 
+### Key Library Functions:
+
+- **`authenticateFingerprint`**\
+  Securely authenticate users via their fingerprint with a simple prompt.
+
+  ```
+  const result = await authenticateFingerprint('Authenticate to continue');
+
+  ```
+
+- **`authenticateDeviceCredentials`**\
+  Use device credentials (PIN, pattern, password) as a fallback if fingerprint auth is unavailable.
+
+  ```
+  await authenticateDeviceCredentials('Please verify your device lock');
+
+  ```
+
+- **`openSecuritySettings`**\
+  Open device security settings to allow users to add or modify their fingerprint.
+
+  ```
+  await openSecuritySettings();
+
+  ```
+
+- **`isFingerprintAvailable`**\
+  Check if the device has a fingerprint sensor and if it's enabled for authentication.
+
+  ```
+  const available = await isFingerprintAvailable();
+
+  ```
+
+### How to Use:
+
+1.  **Check Fingerprint Availability**:\
+    Use `isFingerprintAvailable` to ensure fingerprint authentication is supported.
+
+2.  **Add Fingerprint**:\
+    If not added, guide users to the security settings with `openSecuritySettings`.
+
+3.  **Enable Fingerprint Authentication**:\
+    Use `authenticateDeviceCredentials` to enable fingerprint authentication on the device.
+
+4.  **Authenticate via Fingerprint**:\
+    Once enabled, authenticate users using `authenticateFingerprint`.
+
+This library ensures seamless, secure login via fingerprint authentication while providing a fallback to device credentials when needed.
+
 ## Contributing
 
 See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.

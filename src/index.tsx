@@ -16,4 +16,8 @@ export function authenticateDeviceCredentials(
   return FingerprintAuth.authenticateDeviceCredentials(promptMessage);
 }
 
+export function openSecuritySettings(): Promise<boolean> {
+  return FingerprintAuth.openSecuritySettings();
+}
+
 export const fingerprintEmitter = new NativeEventEmitter(FingerprintAuth);

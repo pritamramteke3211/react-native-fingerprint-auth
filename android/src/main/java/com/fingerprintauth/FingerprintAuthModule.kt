@@ -2,8 +2,6 @@ package com.fingerprintauth
 
 import android.content.Intent
 import android.provider.Settings
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -18,17 +16,18 @@ class FingerprintAuthModule(private val context: ReactApplicationContext) :
     NativeFingerprintAuthSpec(context) {
 
     private val reactContext = context
-
-    override fun getName(): String = NAME
-
     private var biometricPrompt: BiometricPrompt? = null
     private var executor: Executor? = null
+
+    override fun getName(): String = NAME
 
     override fun isFingerprintAvailable(promise: Promise) {
         val biometricManager = BiometricManager.from(reactContext)
         when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
             BiometricManager.BIOMETRIC_SUCCESS -> promise.resolve(true)
-            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> promise.resolve(false)
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED,
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE,
+            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> promise.resolve(false)
             else -> promise.resolve(false)
         }
     }
@@ -42,7 +41,6 @@ class FingerprintAuthModule(private val context: ReactApplicationContext) :
         (activity as FragmentActivity).runOnUiThread {
             try {
                 executor = ContextCompat.getMainExecutor(activity)
-
                 biometricPrompt = BiometricPrompt(
                     activity,
                     executor!!,
@@ -128,13 +126,23 @@ class FingerprintAuthModule(private val context: ReactApplicationContext) :
         }
     }
 
+    override fun openSecuritySettings(promise: Promise) {
+        try {
+            val intent = Intent(Settings.ACTION_SECURITY_SETTINGS)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            reactContext.startActivity(intent)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("OPEN_SETTINGS_FAILED", "Failed to open security settings: ${e.message}")
+        }
+    }
+
     private fun sendEvent(eventName: String, message: String) {
         reactContext
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
             .emit(eventName, message)
     }
 
-    // Required for NativeEventEmitter compatibility
     override fun addListener(eventName: String) {}
     override fun removeListeners(count: Double) {}
 

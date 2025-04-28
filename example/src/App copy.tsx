@@ -3,7 +3,6 @@ import { StyleSheet, View, Text, Alert, Button } from 'react-native';
 import {
   authenticateFingerprint,
   isFingerprintAvailable,
-  authenticateDeviceCredentials,
 } from 'react-native-fingerprint-auth';
 
 export default function App() {
@@ -15,18 +14,10 @@ export default function App() {
 
     setIsAuthenticating(true);
     try {
-      // First authenticate device credentials (PIN/Pattern)
-      const deviceResult = await authenticateDeviceCredentials(
-        'Please verify your device to continue'
+      const result = await authenticateFingerprint(
+        'Verify your identity to proceed'
       );
-      console.log('Device auth result:', deviceResult);
-
-      // Then authenticate fingerprint
-      const fingerprintResult = await authenticateFingerprint(
-        'Verify your fingerprint to proceed'
-      );
-
-      Alert.alert('Success', fingerprintResult);
+      Alert.alert('Success', result);
     } catch (error) {
       console.log('Authentication error:', error);
       if (
@@ -81,6 +72,10 @@ export default function App() {
           onPress={handleAuthenticate}
           disabled={!isAvailable || isAuthenticating}
         />
+
+        {/* {isAuthenticating && (
+          <Button title="Cancel" onPress={handleCancel} color="#ff4444" />
+        )} */}
       </View>
     </View>
   );

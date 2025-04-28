@@ -6,6 +6,7 @@ export interface Spec extends TurboModule {
   authenticateFingerprint(reason: string): Promise<string>;
   addListener(eventName: string): void;
   removeListeners(count: number): void;
+  authenticateDeviceCredentials(promptMessage: string): Promise<string>;
 }
 
 // export default TurboModuleRegistry.getEnforcing<Spec>('FingerprintAuth');

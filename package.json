@@ -1,6 +1,6 @@
 {
   "name": "react-native-fingerprint-auth-lib",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A React Native library designed specifically for Android devices to enable fingerprint authentication. It provides a straightforward API for integrating native Android fingerprint functionality into your app, allowing you to securely authenticate users with biometric recognition.",
   "source": "./src\\index.tsx",
   "main": "./lib/module/index.js",

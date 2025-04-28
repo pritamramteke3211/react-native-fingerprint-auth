@@ -48,89 +48,158 @@ npm install react-native-fingerprint-auth-lib
 
 ```js
 import { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Alert, Button } from 'react-native';
+import {
+  AppState,
+  type AppStateStatus,
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
 import {
   authenticateFingerprint,
-  isFingerprintAvailable,
   authenticateDeviceCredentials,
+  openSecuritySettings,
+  isFingerprintAvailable as checkFingerprintNative,
 } from 'react-native-fingerprint-auth-lib';
 
 export default function App() {
-  const [isAvailable, setIsAvailable] = (useState < boolean) | (null > null);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-  const handleAuthenticate = async () => {
-    if (!isAvailable) return;
-
-    setIsAuthenticating(true);
-    try {
-      // First authenticate device credentials (PIN/Pattern)
-      const deviceResult = await authenticateDeviceCredentials(
-        'Please verify your device to continue'
-      );
-      console.log('Device auth result:', deviceResult);
-
-      // Then authenticate fingerprint
-      const fingerprintResult = await authenticateFingerprint(
-        'Verify your fingerprint to proceed'
-      );
-
-      Alert.alert('Success', fingerprintResult);
-    } catch (error) {
-      console.log('Authentication error:', error);
-      if (
-        error &&
-        error instanceof Error &&
-        error.message !== 'Error: Cancel (13)'
-      ) {
-        console.log('Error message:', error.message);
-        Alert.alert(
-          'Error',
-          error instanceof Error ? error.message : String(error)
-        );
-      }
-    } finally {
-      setIsAuthenticating(false);
-    }
-  };
-
-  const checkFingerprintAvailability = async () => {
-    try {
-      const available = await isFingerprintAvailable();
-      setIsAvailable(available);
-      console.log('available', available);
-    } catch (error) {
-      console.error('Error checking fingerprint availability:', error);
-      setIsAvailable(false);
-    }
-  };
+  const [isFingerprintAvailable, setIsFingerprintAvailable] = useState<
+    boolean | null
+  >(null);
+  const [fingerprintEnabled, setFingerprintEnabled] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    checkFingerprintAvailability();
+    const initialize = async () => {
+      await checkFingerprint();
+    };
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        checkFingerprint();
+      }
+    };
+
+    initialize();
+
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange
+    );
+    return () => {
+      subscription.remove();
+    };
   }, []);
+
+  const checkFingerprint = async () => {
+    try {
+      setChecking(true);
+      const available = await checkFingerprintNative();
+      setIsFingerprintAvailable(available);
+
+      // If fingerprint removed manually, disable inside app too
+      if (!available) {
+        setFingerprintEnabled(false);
+      }
+    } catch (error) {
+      console.error('Fingerprint check error:', error);
+      setIsFingerprintAvailable(false);
+      setFingerprintEnabled(false);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleAddFingerprint = async () => {
+    try {
+      await openSecuritySettings();
+    } catch (error) {
+      console.log('Failed to open settings:', error);
+    }
+  };
+
+  const handleEnableFingerprint = async () => {
+    try {
+      await authenticateDeviceCredentials('Please verify your device lock');
+      setFingerprintEnabled(true);
+      Alert.alert('Success', 'Fingerprint enabled successfully!');
+    } catch (error) {
+      console.log('Device auth failed or cancelled:', error);
+    }
+  };
+
+  const handleAuthenticate = async () => {
+    try {
+      const result = await authenticateFingerprint('Authenticate to continue');
+      Alert.alert('Authenticated!', result);
+    } catch (error) {
+      console.log('Fingerprint auth failed:', error);
+      Alert.alert(
+        'Failed',
+        error instanceof Error ? error.message : 'Authentication failed'
+      );
+    }
+  };
+
+  if (isFingerprintAvailable === null || checking) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Checking fingerprint availability...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Fingerprint Authentication</Text>
+      <Text style={styles.title}>Secure Login</Text>
 
-      <View style={styles.statusContainer}>
-        <Text style={styles.statusText}>
-          Fingerprint available:{' '}
-          {isAvailable === null
-            ? 'Checking...'
-            : isAvailable
-              ? '✅ Yes'
-              : '❌ No'}
-        </Text>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Authenticate"
+      {!isFingerprintAvailable ? (
+        <TouchableOpacity
+          style={styles.enableButton}
+          onPress={handleAddFingerprint}
+        >
+          <Image
+            source={{
+              uri: 'https://static.thenounproject.com/png/1238269-200.png',
+            }}
+            style={styles.fingerprintIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.enableButtonText}>Add Fingerprint</Text>
+        </TouchableOpacity>
+      ) : !fingerprintEnabled ? (
+        <TouchableOpacity
+          style={styles.enableButton}
+          onPress={handleEnableFingerprint}
+        >
+          <Image
+            source={{
+              uri: 'https://static.thenounproject.com/png/1238269-200.png',
+            }}
+            style={styles.fingerprintIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.enableButtonText}>Enable Fingerprint</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={styles.enableButton}
           onPress={handleAuthenticate}
-          disabled={!isAvailable || isAuthenticating}
-        />
-      </View>
+        >
+          <Image
+            source={{
+              uri: 'https://static.thenounproject.com/png/1238269-200.png',
+            }}
+            style={styles.fingerprintIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.enableButtonText}>Login with Fingerprint</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -138,24 +207,35 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 24,
     justifyContent: 'center',
-    padding: 20,
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 40,
   },
-  statusContainer: {
-    marginBottom: 30,
+  enableButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    borderRadius: 8,
+    backgroundColor: 'transparent',
   },
-  statusText: {
-    fontSize: 18,
+  enableButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 10,
   },
-  buttonContainer: {
-    gap: 10,
+  fingerprintIcon: {
+    width: 24,
+    height: 24,
   },
 });
 ```

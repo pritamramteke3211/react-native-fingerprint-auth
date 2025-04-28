@@ -6085,7 +6085,7 @@ react-native-builder-bob@^0.40.6:
     which "^2.0.2"
     yargs "^17.5.1"
 
-"react-native-fingerprint-auth-example@file:D:\\RNProjects\\fingerprint-auth\\example":
+"react-native-fingerprint-auth-lib-example@file:D:\\RNProjects\\fingerprint-auth\\example":
   version "0.0.1"
   resolved "file:example"
   dependencies:

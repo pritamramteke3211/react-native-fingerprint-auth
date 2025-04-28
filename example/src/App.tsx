@@ -15,7 +15,7 @@ import {
   authenticateDeviceCredentials,
   openSecuritySettings,
   isFingerprintAvailable as checkFingerprintNative,
-} from 'react-native-fingerprint-auth';
+} from 'react-native-fingerprint-auth-lib';
 
 export default function App() {
   const [isFingerprintAvailable, setIsFingerprintAvailable] = useState<

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "react-native-fingerprint-auth": ["./src/index"]
+      "react-native-fingerprint-auth-lib": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,

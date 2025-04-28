@@ -1,21 +1,16 @@
 {
-  "name": "react-native-fingerprint-auth",
+  "name": "react-native-fingerprint-auth-lib",
   "version": "0.1.0",
   "description": "A React Native library designed specifically for Android devices to enable fingerprint authentication. It provides a straightforward API for integrating native Android fingerprint functionality into your app, allowing you to securely authenticate users with biometric recognition.",
-  "source": "./src/index.tsx",
-  "main": "./lib/commonjs/index.js",
+  "source": "./src\\index.tsx",
+  "main": "./lib/module/index.js",
   "module": "./lib/module/index.js",
   "exports": {
     ".": {
-      "import": {
-        "types": "./lib/typescript/module/src/index.d.ts",
-        "default": "./lib/module/index.js"
-      },
-      "require": {
-        "types": "./lib/typescript/commonjs/src/index.d.ts",
-        "default": "./lib/commonjs/index.js"
-      }
-    }
+      "types": "./lib\\typescript\\src\\index.d.ts",
+      "default": "./lib\\module\\index.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "src",
@@ -46,8 +41,23 @@
   },
   "keywords": [
     "react-native",
+    "android",
     "ios",
-    "android"
+    "authentication",
+    "biometric",
+    "fingerprint",
+    "fingerprint-authentication",
+    "biometric-authentication",
+    "secure-authentication",
+    "touch-id",
+    "react-native-auth",
+    "react-native-biometrics",
+    "react-native-security",
+    "native-modules",
+    "turbo-modules",
+    "mobile-security",
+    "user-authentication",
+    "typescript"
   ],
   "repository": {
     "type": "git",
@@ -75,6 +85,8 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
     "jest": "^29.7.0",
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0",
     "prettier": "^3.0.3",
     "react": "18.3.1",
     "react-native": "0.75.3",
@@ -158,35 +170,21 @@
     "source": "src",
     "output": "lib",
     "targets": [
-      [
-        "commonjs",
-        {
-          "esm": true
-        }
-      ],
-      [
-        "module",
-        {
-          "esm": true
-        }
-      ],
-      [
-        "typescript",
-        {
-          "project": "tsconfig.build.json",
-          "esm": true
-        }
-      ]
+      "commonjs",
+      "module",
+      "typescript"
     ]
   },
   "codegenConfig": {
     "name": "RNFingerprintAuthSpec",
     "type": "modules",
-    "jsSrcsDir": "src"
+    "jsSrcsDir": "src",
+    "includesGeneratedCode": false
   },
   "create-react-native-library": {
     "type": "module-new",
     "languages": "kotlin-objc",
     "version": "0.40.0"
-  }
+  },
+  "types": "./lib\\typescript\\src\\index.d.ts"
 }

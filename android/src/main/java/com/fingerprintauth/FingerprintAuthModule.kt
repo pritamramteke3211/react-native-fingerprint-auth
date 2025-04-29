@@ -1,152 +1,168 @@
 package com.fingerprintauth
 
 import android.content.Intent
-import android.provider.Settings
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
 import com.facebook.react.bridge.*
-import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import androidx.fragment.app.FragmentActivity
 import java.util.concurrent.Executor
 
-@ReactModule(name = FingerprintAuthModule.NAME)
-class FingerprintAuthModule(private val context: ReactApplicationContext) :
-    NativeFingerprintAuthSpec(context) {
+class FingerprintAuthModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
-    private val reactContext = context
-    private var biometricPrompt: BiometricPrompt? = null
-    private var executor: Executor? = null
+    private val biometricManager: BiometricManager = BiometricManager.from(reactContext)
+    private val executor: Executor = ContextCompat.getMainExecutor(reactContext)
 
-    override fun getName(): String = NAME
+    override fun getName(): String {
+        return "FingerprintAuth"
+    }
 
-    override fun isFingerprintAvailable(promise: Promise) {
-        val biometricManager = BiometricManager.from(reactContext)
-        when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
-            BiometricManager.BIOMETRIC_SUCCESS -> promise.resolve(true)
-            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED,
-            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE,
-            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> promise.resolve(false)
-            else -> promise.resolve(false)
+    // Check if fingerprint authentication is available on the device
+    @ReactMethod
+    fun isFingerprintAvailable(promise: Promise) {
+        try {
+            val result = biometricManager.canAuthenticate()
+            when (result) {
+                BiometricManager.BIOMETRIC_SUCCESS -> promise.resolve(true)
+                BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE,
+                BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE,
+                BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> promise.resolve(false)
+                else -> promise.resolve(false)
+            }
+        } catch (e: Exception) {
+            promise.reject("ERROR", e)
         }
     }
 
-    override fun authenticateFingerprint(reason: String, promise: Promise) {
-        val activity = currentActivity ?: run {
-            promise.reject("NO_ACTIVITY", "No current activity found")
-            return
-        }
-
-        (activity as FragmentActivity).runOnUiThread {
-            try {
-                executor = ContextCompat.getMainExecutor(activity)
-                biometricPrompt = BiometricPrompt(
+    // Authenticate user using fingerprint
+    @ReactMethod
+    fun authenticateFingerprint(reason: String, promise: Promise) {
+        try {
+            val activity = reactApplicationContext.currentActivity
+            if (activity is FragmentActivity) {
+                val biometricPrompt = BiometricPrompt(
                     activity,
-                    executor!!,
+                    executor,
                     object : BiometricPrompt.AuthenticationCallback() {
                         override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                            if (errorCode == BiometricPrompt.ERROR_CANCELED ||
-                                errorCode == BiometricPrompt.ERROR_USER_CANCELED) {
-                                promise.reject("USER_CANCELLED", "Authentication was cancelled by user")
-                            } else {
-                                promise.reject("AUTH_ERROR", "Error: $errString ($errorCode)")
-                            }
+                            super.onAuthenticationError(errorCode, errString)
+                            promise.reject("AUTH_ERROR", errString.toString())
                         }
 
                         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                            promise.resolve("Authentication successful!")
+                            super.onAuthenticationSucceeded(result)
+                            promise.resolve("success")
                         }
 
                         override fun onAuthenticationFailed() {
-                            sendEvent("onFingerprintFail", "Authentication failed")
+                            super.onAuthenticationFailed()
+                            promise.reject("AUTH_FAILED", "Authentication failed.")
                         }
                     }
                 )
 
                 val promptInfo = BiometricPrompt.PromptInfo.Builder()
                     .setTitle("Fingerprint Authentication")
-                    .setSubtitle(reason)
+                    .setSubtitle("Authenticate using your fingerprint")
+                    .setDescription(reason)
                     .setNegativeButtonText("Cancel")
-                    .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
                     .build()
 
-                biometricPrompt!!.authenticate(promptInfo)
-            } catch (e: Exception) {
-                promise.reject("AUTH_FAILED", "Failed to start fingerprint auth: ${e.message}")
+                activity.runOnUiThread {
+                    biometricPrompt.authenticate(promptInfo)
+                }
+
+            } else {
+                promise.reject("ERROR", "Activity is not a FragmentActivity")
             }
+        } catch (e: Exception) {
+            promise.reject("ERROR", e)
         }
     }
 
-    override fun authenticateDeviceCredentials(promptMessage: String, promise: Promise) {
-        val activity = currentActivity ?: run {
-            promise.reject("NO_ACTIVITY", "No current activity found")
-            return
-        }
-
-        (activity as FragmentActivity).runOnUiThread {
-            try {
-                executor = ContextCompat.getMainExecutor(activity)
-
+    // Authenticate user using device credentials (PIN, pattern, password)
+    @ReactMethod
+    fun authenticateDeviceCredentials(reason: String, promise: Promise) {
+        try {
+            val activity = reactApplicationContext.currentActivity
+            if (activity is FragmentActivity) {
                 val biometricPrompt = BiometricPrompt(
                     activity,
-                    executor!!,
+                    executor,
                     object : BiometricPrompt.AuthenticationCallback() {
                         override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                            if (errorCode == BiometricPrompt.ERROR_CANCELED ||
-                                errorCode == BiometricPrompt.ERROR_USER_CANCELED) {
-                                promise.reject("USER_CANCELLED", "Authentication cancelled by user")
-                            } else {
-                                promise.reject("AUTH_ERROR", "Error: $errString ($errorCode)")
-                            }
+                            super.onAuthenticationError(errorCode, errString)
+                            promise.reject("AUTH_ERROR", errString.toString())
                         }
 
                         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                            promise.resolve("Device credentials authentication successful!")
+                            super.onAuthenticationSucceeded(result)
+                            promise.resolve("success")
                         }
 
                         override fun onAuthenticationFailed() {
-                            sendEvent("onDeviceCredentialFail", "Device credential authentication failed")
+                            super.onAuthenticationFailed()
+                            promise.reject("AUTH_FAILED", "Authentication failed.")
                         }
                     }
                 )
 
                 val promptInfo = BiometricPrompt.PromptInfo.Builder()
                     .setTitle("Device Authentication")
-                    .setSubtitle(promptMessage)
-                    .setDescription("Confirm your device credentials (PIN, Pattern, or Password)")
-                    .setAllowedAuthenticators(BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                    .setSubtitle("Authenticate using your device credentials")
+                    .setDescription(reason)
+                    .setAllowedAuthenticators(
+                        BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                    )
                     .build()
 
-                biometricPrompt.authenticate(promptInfo)
+                activity.runOnUiThread {
+                    biometricPrompt.authenticate(promptInfo)
+                }
 
-            } catch (e: Exception) {
-                promise.reject("AUTH_FAILED", "Failed to start device credential auth: ${e.message}")
+            } else {
+                promise.reject("ERROR", "Activity is not a FragmentActivity")
             }
+        } catch (e: Exception) {
+            promise.reject("ERROR", e)
         }
     }
 
-    override fun openSecuritySettings(promise: Promise) {
+    // Open security settings to let the user set up biometric authentication
+    @ReactMethod
+    fun openSecuritySettings(promise: Promise) {
         try {
-            val intent = Intent(Settings.ACTION_SECURITY_SETTINGS)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            reactContext.startActivity(intent)
+            val intent = Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS)
+            reactApplicationContext.currentActivity?.startActivity(intent)
             promise.resolve(true)
         } catch (e: Exception) {
-            promise.reject("OPEN_SETTINGS_FAILED", "Failed to open security settings: ${e.message}")
+            promise.reject("ERROR", e)
         }
     }
 
-    private fun sendEvent(eventName: String, message: String) {
-        reactContext
-            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-            .emit(eventName, message)
+    
+
+       // Add this method to support NativeEventEmitter
+    @ReactMethod
+    fun addListener(eventName: String) {
+        // Required for RN 0.65+
     }
 
-    override fun addListener(eventName: String) {}
-    override fun removeListeners(count: Double) {}
+    @ReactMethod
+    fun removeListeners(count: Int) {
+        // Required for RN 0.65+
+    }
 
-    companion object {
-        const val NAME = "FingerprintAuth"
+
+    // Send fingerprint event to JS
+    private fun sendFingerprintEvent(event: String, params: WritableMap) {
+        try {
+            val emitter = reactApplicationContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+            emitter.emit(event, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

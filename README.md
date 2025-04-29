@@ -101,7 +101,6 @@ export default function App() {
       const available = await checkFingerprintNative();
       setIsFingerprintAvailable(available);
 
-      // If fingerprint removed manually, disable inside app too
       if (!available) {
         setFingerprintEnabled(false);
       }
@@ -132,16 +131,29 @@ export default function App() {
     }
   };
 
+  const isBiometricLockoutError = (error: unknown) => {
+    if (!(error instanceof Error)) return false;
+    const msg = error.message.toLowerCase();
+    return (
+      msg.includes('lockout') ||
+      msg.includes('face unlock') ||
+      msg.includes('biometric')
+    );
+  };
+
   const handleAuthenticate = async () => {
     try {
       const result = await authenticateFingerprint('Authenticate to continue');
       Alert.alert('Authenticated!', result);
     } catch (error) {
       console.log('Fingerprint auth failed:', error);
-      Alert.alert(
-        'Failed',
-        error instanceof Error ? error.message : 'Authentication failed'
-      );
+
+      if (isBiometricLockoutError(error)) {
+        Alert.alert(
+          'Fingerprint Locked',
+          'Fingerprint failed too many times. Please try again after some time.'
+        );
+      }
     }
   };
 

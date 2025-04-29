@@ -1,6 +1,7 @@
 import type { TurboModule } from 'react-native';
-import { TurboModuleRegistry } from 'react-native';
+import { TurboModuleRegistry, NativeEventEmitter } from 'react-native';
 
+// Define the Spec for the FingerprintAuth module
 export interface Spec extends TurboModule {
   isFingerprintAvailable(): Promise<boolean>;
   authenticateFingerprint(reason: string): Promise<string>;
@@ -10,14 +11,12 @@ export interface Spec extends TurboModule {
   openSecuritySettings(): Promise<boolean>;
 }
 
-// export default TurboModuleRegistry.getEnforcing<Spec>('FingerprintAuth');
-
 // Get the TurboModule (typed)
 const FingerprintAuth =
   TurboModuleRegistry.getEnforcing<Spec>('FingerprintAuth');
 
-// Create the event emitter
-// export const fingerprintEmitter = new NativeEventEmitter(FingerprintAuth);
+// Create the event emitter for events emitted by the native module
+export const fingerprintEmitter = new NativeEventEmitter(FingerprintAuth);
 
 // Export the module as default
 export default FingerprintAuth;
